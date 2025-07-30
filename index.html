@@ -1,0 +1,352 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Finance Calculators</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-indigo-600 text-white py-4">
+    <div class="container mx-auto px-4">
+      <h1 class="text-2xl font-bold">Vehicle Finance Calculators</h1>
+      <nav class="mt-2">
+        <ul class="flex space-x-4">
+          <li><button onclick="showCalculator('lease')" class="hover:underline">Lease Payment</button></li>
+          <li><button onclick="showCalculator('loan')" class="hover:underline">Loan Payment</button></li>
+          <li><button onclick="showCalculator('fuel')" class="hover:underline">Fuel Cost</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 py-8 flex-grow">
+    <!-- Lease Payment Calculator -->
+    <section id="lease" class="calculator">
+      <h2 class="text-3xl font-bold text-center mb-8">Lease Payment Calculator - Compare Two Cars</h2>
+      <div class="w-full max-w-5xl flex flex-col md:flex-row gap-8">
+        <!-- Car 1 Inputs -->
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/2">
+          <div class="space-y-4">
+            <div>
+              <label for="carName1" class="block text-sm font-medium text-gray-700">Car Name</label>
+              <input type="text" id="carName1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="Car A" placeholder="Enter car name">
+            </div>
+            <div>
+              <label for="vehiclePrice1" class="block text-sm font-medium text-gray-700">Vehicle Price (CAD)</label>
+              <input type="number" id="vehiclePrice1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="66484" step="0.01">
+            </div>
+            <div>
+              <label for="tradeIn1" class="block text-sm font-medium text-gray-700">Trade-in Amount (CAD)</label>
+              <input type="number" id="tradeIn1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="11000" step="0.01">
+            </div>
+            <div>
+              <label for="downPayment1" class="block text-sm font-medium text-gray-700">Down Payment (CAD)</label>
+              <input type="number" id="downPayment1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="0" step="0.01">
+            </div>
+            <div>
+              <label for="interestRate1" class="block text-sm font-medium text-gray-700">Annual Interest Rate (%)</label>
+              <input type="number" id="interestRate1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="6.79" step="0.01">
+            </div>
+            <div>
+              <label for="hstRate1" class="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+              <input type="number" id="hstRate1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="13" step="0.01">
+            </div>
+            <div>
+              <label for="leaseTerm1" class="block text-sm font-medium text-gray-700">Lease Term (Months)</label>
+              <input type="number" id="leaseTerm1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="36" step="1">
+            </div>
+            <div>
+              <label for="residualValue1" class="block text-sm font-medium text-gray-700">Residual Value (%)</label>
+              <input type="number" id="residualValue1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="50" step="0.01">
+            </div>
+          </div>
+        </div>
+        <!-- Car 2 Inputs -->
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/2">
+          <div class="space-y-4">
+            <div>
+              <label for="carName2" class="block text-sm font-medium text-gray-700">Car Name</label>
+              <input type="text" id="carName2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="Car B" placeholder="Enter car name">
+            </div>
+            <div>
+              <label for="vehiclePrice2" class="block text-sm font-medium text-gray-700">Vehicle Price (CAD)</label>
+              <input type="number" id="vehiclePrice2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="50000" step="0.01">
+            </div>
+            <div>
+              <label for="tradeIn2" class="block text-sm font-medium text-gray-700">Trade-in Amount (CAD)</label>
+              <input type="number" id="tradeIn2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="8000" step="0.01">
+            </div>
+            <div>
+              <label for="downPayment2" class="block text-sm font-medium text-gray-700">Down Payment (CAD)</label>
+              <input type="number" id="downPayment2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="0" step="0.01">
+            </div>
+            <div>
+              <label for="interestRate2" class="block text-sm font-medium text-gray-700">Annual Interest Rate (%)</label>
+              <input type="number" id="interestRate2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="6.79" step="0.01">
+            </div>
+            <div>
+              <label for="hstRate2" class="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+              <input type="number" id="hstRate2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="13" step="0.01">
+            </div>
+            <div>
+              <label for="leaseTerm2" class="block text-sm font-medium text-gray-700">Lease Term (Months)</label>
+              <input type="number" id="leaseTerm2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="36" step="1">
+            </div>
+            <div>
+              <label for="residualValue2" class="block text-sm font-medium text-gray-700">Residual Value (%)</label>
+              <input type="number" id="residualValue2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="50" step="0.01">
+            </div>
+          </div>
+        </div>
+      </div>
+      <button onclick="calculateLeasePayments()" class="mt-6 w-full max-w-md bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Calculate</button>
+      <div id="leaseResult" class="w-full max-w-5xl mt-8 flex flex-col md:flex-row gap-8"></div>
+    </section>
+
+    <!-- Loan Payment Calculator -->
+    <section id="loan" class="calculator hidden">
+      <h2 class="text-3xl font-bold text-center mb-8">Loan Payment Calculator</h2>
+      <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-auto">
+        <div class="space-y-4">
+          <div>
+            <label for="loanAmount" class="block text-sm font-medium text-gray-700">Loan Amount</label>
+            <input type="number" id="loanAmount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="50000" step="0.01">
+          </div>
+          <div>
+            <label for="loanInterestRate" class="block text-sm font-medium text-gray-700">Annual Interest Rate (%)</label>
+            <input type="number" id="loanInterestRate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="5.99" step="0.01">
+          </div>
+          <div>
+            <label for="loanTerm" class="block text-sm font-medium text-gray-700">Loan Term (Months)</label>
+            <input type="number" id="loanTerm" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="60" step="1">
+          </div>
+          <div>
+            <label for="loanTaxRate" class="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+            <input type="number" id="loanTaxRate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="13" step="0.01">
+          </div>
+        </div>
+        <button onclick="calculateLoanPayments()" class="mt-6 w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Calculate</button>
+      </div>
+      <div id="loanResult" class="mt-6 text-center"></div>
+    </section>
+
+    <!-- Fuel Cost Calculator -->
+    <section id="fuel" class="calculator hidden">
+      <h2 class="text-3xl font-bold text-center mb-8">Fuel Cost Calculator</h2>
+      <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-auto">
+        <div class="space-y-4">
+          <div>
+            <label for="distance" class="block text-sm font-medium text-gray-700">Annual Distance (km)</label>
+            <input type="number" id="distance" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="15000" step="0.01">
+          </div>
+          <div>
+            <label for="fuelEfficiency" class="block text-sm font-medium text-gray-700">Fuel Efficiency (L/100km)</label>
+            <input type="number" id="fuelEfficiency" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="8.5" step="0.01">
+          </div>
+          <div>
+            <label for="fuelPrice" class="block text-sm font-medium text-gray-700">Fuel Price ($/L)</label>
+            <input type="number" id="fuelPrice" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" value="1.75" step="0.01">
+          </div>
+        </div>
+        <button onclick="calculateFuelCost()" class="mt-6 w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Calculate</button>
+      </div>
+      <div id="fuelResult" class="mt-6 text-center"></div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-4">
+    <div class="container mx-auto px-4 text-center">
+      <p>Vehicle Finance Calculators | Accessible worldwide | All calculations in user-specified currency (default CAD)</p>
+    </div>
+  </footer>
+
+  <script>
+    // Navigation
+    function showCalculator(calculator) {
+      document.querySelectorAll('.calculator').forEach(section => section.classList.add('hidden'));
+      document.getElementById(calculator).classList.remove('hidden');
+    }
+
+    // Lease Payment Calculator
+    function calculateLeasePayments() {
+      // Get input values for Car 1
+      const carName1 = document.getElementById('carName1').value || 'Car A';
+      const vehiclePrice1 = parseFloat(document.getElementById('vehiclePrice1').value) || 0;
+      const tradeIn1 = parseFloat(document.getElementById('tradeIn1').value) || 0;
+      const downPayment1 = parseFloat(document.getElementById('downPayment1').value) || 0;
+      const interestRate1 = parseFloat(document.getElementById('interestRate1').value) || 0;
+      const hstRate1 = parseFloat(document.getElementById('hstRate1').value) || 0;
+      const leaseTerm1 = parseInt(document.getElementById('leaseTerm1').value) || 36;
+      const residualValuePercent1 = parseFloat(document.getElementById('residualValue1').value) || 50;
+
+      // Get input values for Car 2
+      const carName2 = document.getElementById('carName2').value || 'Car B';
+      const vehiclePrice2 = parseFloat(document.getElementById('vehiclePrice2').value) || 0;
+      const tradeIn2 = parseFloat(document.getElementById('tradeIn2').value) || 0;
+      const downPayment2 = parseFloat(document.getElementById('downPayment2').value) || 0;
+      const interestRate2 = parseFloat(document.getElementById('interestRate2').value) || 0;
+      const hstRate2 = parseFloat(document.getElementById('hstRate2').value) || 0;
+      const leaseTerm2 = parseInt(document.getElementById('leaseTerm2').value) || 36;
+      const residualValuePercent2 = parseFloat(document.getElementById('residualValue2').value) || 50;
+
+      // Validate inputs
+      if (
+        vehiclePrice1 <= 0 || tradeIn1 < 0 || downPayment1 < 0 || interestRate1 < 0 || hstRate1 < 0 || leaseTerm1 <= 0 || residualValuePercent1 < 0 || residualValuePercent1 > 100 ||
+        vehiclePrice2 <= 0 || tradeIn2 < 0 || downPayment2 < 0 || interestRate2 < 0 || hstRate2 < 0 || leaseTerm2 <= 0 || residualValuePercent2 < 0 || residualValuePercent2 > 100
+      ) {
+        document.getElementById('leaseResult').innerHTML = '<p class="text-red-600 text-center">Please enter valid positive values (Residual Value between 0 and 100).</p>';
+        return;
+      }
+
+      // Calculate for Car 1
+      const adjustedCapitalizedCost1 = vehiclePrice1 - tradeIn1 - downPayment1 + (downPayment1 * (hstRate1 / 100));
+      const residualValue1 = vehiclePrice1 * (residualValuePercent1 / 100);
+      const moneyFactor1 = interestRate1 / 2400;
+      const monthlyDepreciation1 = (adjustedCapitalizedCost1 - residualValue1) / leaseTerm1;
+      const monthlyFinanceCharge1 = (adjustedCapitalizedCost1 + residualValue1) * moneyFactor1;
+      const baseMonthlyPayment1 = monthlyDepreciation1 + monthlyFinanceCharge1;
+      const monthlyHST1 = baseMonthlyPayment1 * (hstRate1 / 100);
+      const totalMonthlyPayment1 = baseMonthlyPayment1 + monthlyHST1;
+      const biWeeklyPayment1 = (totalMonthlyPayment1 * 12) / 26;
+      const weeklyPayment1 = (totalMonthlyPayment1 * 12) / 52;
+      const totalInterestCost1 = monthlyFinanceCharge1 * leaseTerm1;
+      const totalCostIncludingInterest1 = totalMonthlyPayment1 * leaseTerm1;
+
+      // Calculate for Car 2
+      const adjustedCapitalizedCost2 = vehiclePrice2 - tradeIn2 - downPayment2 + (downPayment2 * (hstRate2 / 100));
+      const residualValue2 = vehiclePrice2 * (residualValuePercent2 / 100);
+      const moneyFactor2 = interestRate2 / 2400;
+      const monthlyDepreciation2 = (adjustedCapitalizedCost2 - residualValue2) / leaseTerm2;
+      const monthlyFinanceCharge2 = (adjustedCapitalizedCost2 + residualValue2) * moneyFactor2;
+      const baseMonthlyPayment2 = monthlyDepreciation2 + monthlyFinanceCharge2;
+      const monthlyHST2 = baseMonthlyPayment2 * (hstRate2 / 100);
+      const totalMonthlyPayment2 = baseMonthlyPayment2 + monthlyHST2;
+      const biWeeklyPayment2 = (totalMonthlyPayment2 * 12) / 26;
+      const weeklyPayment2 = (totalMonthlyPayment2 * 12) / 52;
+      const totalInterestCost2 = monthlyFinanceCharge2 * leaseTerm2;
+      const totalCostIncludingInterest2 = totalMonthlyPayment2 * leaseTerm2;
+
+      // Display results
+      document.getElementById('leaseResult').innerHTML = `
+        <div class="flex flex-col md:flex-row gap-8">
+          <div class="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/2">
+            <h3 class="text-xl font-semibold text-center mb-4">${carName1} Results</h3>
+            <p class="text-lg">Monthly Payment: <span class="text-indigo-600">$${totalMonthlyPayment1.toFixed(2)}</span></p>
+            <p class="text-lg">Bi-weekly Payment: <span class="text-indigo-600">$${biWeeklyPayment1.toFixed(2)}</span></p>
+            <p class="text-lg">Weekly Payment: <span class="text-indigo-600">$${weeklyPayment1.toFixed(2)}</span></p>
+            <p class="text-lg">Total Interest Cost: <span class="text-indigo-600">$${totalInterestCost1.toFixed(2)}</span></p>
+            <p class="text-lg">Total Cost Including Interest: <span class="text-indigo-600">$${totalCostIncludingInterest1.toFixed(2)}</span></p>
+            <p class="text-lg">Lease-End Purchase Price: <span class="text-indigo-600">$${residualValue1.toFixed(2)}</span></p>
+          </div>
+          <div class="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/2">
+            <h3 class="text-xl font-semibold text-center mb-4">${carName2} Results</h3>
+            <p class="text-lg">Monthly Payment: <span class="text-indigo-600">$${totalMonthlyPayment2.toFixed(2)}</span></p>
+            <p class="text-lg">Bi-weekly Payment: <span class="text-indigo-600">$${biWeeklyPayment2.toFixed(2)}</span></p>
+            <p class="text-lg">Weekly Payment: <span class="text-indigo-600">$${weeklyPayment2.toFixed(2)}</span></p>
+            <p class="text-lg">Total Interest Cost: <span class="text-indigo-600">$${totalInterestCost2.toFixed(2)}</span></p>
+            <p class="text-lg">Total Cost Including Interest: <span class="text-indigo-600">$${totalCostIncludingInterest2.toFixed(2)}</span></p>
+            <p class="text-lg">Lease-End Purchase Price: <span class="text-indigo-600">$${residualValue2.toFixed(2)}</span></p>
+          </div>
+        </div>
+      `;
+    }
+
+    // Loan Payment Calculator
+    function calculateLoanPayments() {
+      const loanAmount = parseFloat(document.getElementById('loanAmount').value) || 0;
+      const interestRate = parseFloat(document.getElementById('loanInterestRate').value) || 0;
+      const loanTerm = parseInt(document.getElementById('loanTerm').value) || 60;
+      const taxRate = parseFloat(document.getElementById('loanTaxRate').value) || 0;
+
+      if (loanAmount <= 0 || interestRate < 0 || loanTerm <= 0 || taxRate < 0) {
+        document.getElementById('loanResult').innerHTML = '<p class="text-red-600">Please enter valid positive values.</p>';
+        return;
+      }
+
+      const monthlyRate = interestRate / 100 / 12;
+      const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, loanTerm)) / (Math.pow(1 + monthlyRate, loanTerm) - 1);
+      const monthlyTax = monthlyPayment * (taxRate / 100);
+      const totalMonthlyPayment = monthlyPayment + monthlyTax;
+      const totalInterest = (monthlyPayment * loanTerm) - loanAmount;
+      const totalCost = totalMonthlyPayment * loanTerm;
+
+      document.getElementById('loanResult').innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-auto">
+          <p class="text-lg">Monthly Payment: <span class="text-indigo-600">$${totalMonthlyPayment.toFixed(2)}</span></p>
+          <p class="text-lg">Total Interest Cost: <span class="text-indigo-600">$${totalInterest.toFixed(2)}</span></p>
+          <p class="text-lg">Total Cost Including Interest: <span class="text-indigo-600">$${totalCost.toFixed(2)}</span></p>
+        </div>
+      `;
+    }
+
+    // Fuel Cost Calculator
+    function calculateFuelCost() {
+      const distance = parseFloat(document.getElementById('distance').value) || 0;
+      const fuelEfficiency = parseFloat(document.getElementById('fuelEfficiency').value) || 0;
+      const fuelPrice = parseFloat(document.getElementById('fuelPrice').value) || 0;
+
+      if (distance <= 0 || fuelEfficiency <= 0 || fuelPrice <= 0) {
+        document.getElementById('fuelResult').innerHTML = '<p class="text-red-600">Please enter valid positive values.</p>';
+        return;
+      }
+
+      const annualFuelConsumption = (distance * fuelEfficiency) / 100;
+      const annualCost = annualFuelConsumption * fuelPrice;
+      const monthlyCost = annualCost / 12;
+
+      document.getElementById('fuelResult').innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-auto">
+          <p class="text-lg">Monthly Fuel Cost: <span class="text-indigo-600">$${monthlyCost.toFixed(2)}</span></p>
+          <p class="text-lg">Annual Fuel Cost: <span class="text-indigo-600">$${annualCost.toFixed(2)}</span></p>
+        </div>
+      `;
+    }
+
+    // Show lease calculator by default
+    showCalculator('lease');
+  </script>
+</body>
+</html>
